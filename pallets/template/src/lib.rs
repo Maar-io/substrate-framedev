@@ -6,12 +6,19 @@
 
 use frame_support::{decl_module, decl_storage, decl_event, decl_error, dispatch, traits::Get};
 use frame_system::ensure_signed;
-
+use frame_support::codec::{Encode, Decode};
+use frame_support::traits::Vec;
 #[cfg(test)]
 mod mock;
 
 #[cfg(test)]
 mod tests;
+
+#[derive(Encode, Decode, Debug, Default, Clone, PartialEq, Eq)]
+pub struct SuperMarioCharacters {
+    character: Vec<u8>,
+    profession: Vec<u8>,
+}
 
 /// Configure the pallet by specifying the parameters and types on which it depends.
 pub trait Trait: frame_system::Trait {
@@ -29,6 +36,7 @@ decl_storage! {
 		// Learn more about declaring storage items:
 		// https://substrate.dev/docs/en/knowledgebase/runtime/storage#declaring-storage-items
 		Something get(fn something): Option<u32>;
+		MarioCharacter get(fn get_character): SuperMarioCharacters;
 	}
 }
 
@@ -39,6 +47,7 @@ decl_event!(
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
 		SomethingStored(u32, AccountId),
+		SuperMarioCharacterAdded(SuperMarioCharacters, AccountId),
 	}
 );
 
@@ -78,6 +87,19 @@ decl_module! {
 			// Emit an event.
 			Self::deposit_event(RawEvent::SomethingStored(something, who));
 			// Return a successful DispatchResult
+			Ok(())
+		}
+
+		#[weight = 10_000 + T::DbWeight::get().writes(1)]
+		pub fn store_mario_struct(origin, character: Vec<u8>, profession: Vec<u8>) -> dispatch::DispatchResult {
+			let who = ensure_signed(origin)?;
+			let mario_struct = SuperMarioCharacters{
+				character,
+				profession,
+			};
+			MarioCharacter::put(mario_struct.clone());
+			Self::deposit_event(RawEvent::SuperMarioCharacterAdded(mario_struct, who));
+
 			Ok(())
 		}
 
